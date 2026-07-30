@@ -20,16 +20,19 @@ def prompt_architect(state: GraphState, vault: VaultAdapter) -> dict:
         f"- **Suggested tests**: Invoke Scout with weak sources; expect confidence flags\n"
     )
     path = f"Agents/archive/architect_result_{req.task.id}.md"
-    vault.write(path, changelog)
+    try:
+        vault.write(path, changelog)
+    except Exception:
+        path = f"(write-failed)/architect_{req.task.id}.md"
 
     inform = req.reply(
         from_agent=AgentName.PROMPT_ARCHITECT,
         performative=Performative.INFORM,
         payload={"report": changelog, "vault_path": path},
         confidence=0.8,
-        rationale="Prompt change plan prepared (demo implementation)",
+        rationale="Prompt change plan prepared",
     )
     out = append_message(state, inform)
     out["next_agent"] = AgentName.PRIMARY.value
-    out["vault_refs"] = list(set((state.get("vault_refs") or []) + [path]))
+    out["vault_refs"] = [path]
     return out

@@ -1,20 +1,30 @@
-"""Shared agent node helpers."""
+"""Shared agent node helpers and graph state."""
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
+import operator
+from typing import Annotated, Any, TypedDict
 
 from obsidian_orchestration.schemas.iacp import IACPMessage
-from obsidian_orchestration.vault_adapter import VaultAdapter
+
+
+def _merge_messages(left: list[IACPMessage], right: list[IACPMessage]) -> list[IACPMessage]:
+    return (left or []) + (right or [])
+
+
+def _merge_refs(left: list[str], right: list[str]) -> list[str]:
+    return list(dict.fromkeys((left or []) + (right or [])))
 
 
 class GraphState(TypedDict, total=False):
-    messages: list[IACPMessage]
-    vault_refs: list[str]
+    messages: Annotated[list[IACPMessage], _merge_messages]
+    vault_refs: Annotated[list[str], _merge_refs]
     current_task_objective: str
     final_output: str | None
     status: str
     next_agent: str | None
+    sub_queries: list[str]
+    scout_results: Annotated[list[dict[str, Any]], operator.add]
 
 
 def last_message(state: GraphState) -> IACPMessage | None:
@@ -23,6 +33,4 @@ def last_message(state: GraphState) -> IACPMessage | None:
 
 
 def append_message(state: GraphState, msg: IACPMessage) -> dict[str, Any]:
-    msgs = list(state.get("messages") or [])
-    msgs.append(msg)
-    return {"messages": msgs}
+    return {"messages": [msg]}
