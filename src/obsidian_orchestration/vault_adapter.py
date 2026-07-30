@@ -77,24 +77,17 @@ class ObsidianTunnelVault(VaultAdapter):
       OBSIDIAN_API_URL   default https://127.0.0.1:27124
       OBSIDIAN_API_KEY   Bearer token from Local REST API plugin settings
 
-    The remote Grok Obsidian Tunnel connector proxies these same endpoints.
-    When running locally, point at 127.0.0.1; when using a tunnel, point at the
-    public tunnel URL.
+    When running locally, point at 127.0.0.1. When using a public tunnel, point
+    at the tunnel URL instead.
     """
 
-    def __init(
+    def __init__(
         self,
         base_url: str | None = None,
         api_key: str | None = None,
         timeout: float = 30.0,
         verify_ssl: bool = False,
     ) -> None:
-        self.base_url = (base_url or os.getenv("OBSIDIAN_API_URL", "https://127.0.0.1:27124")).rstrip("/")
-        self.api_key = api_key if api_key is not None else os.getenv("OBSIDIAN_API_KEY", "")
-        self.timeout = timeout
-        self.verify_ssl = verify_ssl
-
-    def __init__(self, base_url: str | None = None, api_key: str | None = None, timeout: float = 30.0, verify_ssl: bool = False) -> None:
         self.base_url = (base_url or os.getenv("OBSIDIAN_API_URL", "https://127.0.0.1:27124")).rstrip("/")
         self.api_key = api_key if api_key is not None else os.getenv("OBSIDIAN_API_KEY", "")
         self.timeout = timeout
@@ -115,13 +108,11 @@ class ObsidianTunnelVault(VaultAdapter):
         )
 
     def list(self, path: str = "") -> list[str]:
-        # Local REST API: GET /vault/ or GET /vault/{dir}/
         suffix = f"/vault/{quote(path.strip('/'), safe='/')}/" if path.strip("/") else "/vault/"
         with self._client() as c:
             r = c.get(suffix)
             r.raise_for_status()
             data = r.json()
-            # Response shape varies; normalize to list of names
             if isinstance(data, list):
                 return [item.get("path", item) if isinstance(item, dict) else str(item) for item in data]
             if isinstance(data, dict) and "files" in data:
@@ -132,7 +123,6 @@ class ObsidianTunnelVault(VaultAdapter):
         with self._client() as c:
             r = c.get(f"/vault/{quote(path, safe='/')}")
             r.raise_for_status()
-            # API may return plain text or JSON with content field
             ctype = r.headers.get("content-type", "")
             if "application/json" in ctype:
                 data = r.json()
@@ -150,14 +140,12 @@ class ObsidianTunnelVault(VaultAdapter):
             r.raise_for_status()
 
     def search(self, query: str) -> list[dict[str, Any]]:
-        # Local REST API simple search: POST /search/simple/ or GET depending on version
         with self._client() as c:
             try:
                 r = c.post("/search/simple/", json={"query": query})
                 r.raise_for_status()
                 data = r.json()
             except Exception:
-                # Fallback: some installs use query param
                 r = c.get("/search/simple/", params={"query": query})
                 r.raise_for_status()
                 data = r.json()
