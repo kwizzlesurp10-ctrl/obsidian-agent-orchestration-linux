@@ -1,7 +1,7 @@
 [project]
 name = "obsidian-agent-orchestration"
-version = "0.2.0"
-description = "LangGraph multi-agent orchestration with IACP, live Obsidian vault, LLM routing, parallel scout fan-out"
+version = "0.3.0"
+description = "LangGraph multi-agent orchestration with IACP, live Obsidian vault, LLM routing, parallel scout fan-out, max_iterations + checkpointer"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

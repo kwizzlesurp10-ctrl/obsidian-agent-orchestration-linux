@@ -25,6 +25,9 @@ class GraphState(TypedDict, total=False):
     next_agent: str | None
     sub_queries: list[str]
     scout_results: Annotated[list[dict[str, Any]], operator.add]
+    # Plan/rework budget (Primary increments; Critic may re-enter while under cap)
+    iteration: int
+    max_iterations: int
 
 
 def last_message(state: GraphState) -> IACPMessage | None:

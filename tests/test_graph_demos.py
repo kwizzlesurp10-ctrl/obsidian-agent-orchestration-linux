@@ -17,6 +17,17 @@ def test_architect_path():
 
 
 def test_critic_path():
-    result = run_objective("Evaluate and critique the latest research draft")
+    vault = InMemoryVault()
+    vault.write(
+        "Domain/Sample.md",
+        "# Domain Sample\n\n"
+        + ("Substantial Domain content about agents and IACP. " * 20)
+        + "\nSee [[Agents/Inter-Agent Communication Protocol]] and [spec](./spec.md).\n",
+    )
+    result = run_objective(
+        "Evaluate and critique the Domain notes quality",
+        vault=vault,
+        checkpointer=False,
+    )
     assert result["status"] == "completed"
     assert "Accept" in (result.get("final_output") or "")

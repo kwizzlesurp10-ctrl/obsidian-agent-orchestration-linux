@@ -17,7 +17,22 @@ from obsidian_orchestration.vault_adapter import VaultAdapter
 
 def primary_plan(state: GraphState, vault: VaultAdapter) -> dict:
     """Decompose objective via LLM (or heuristic) and set next_agent / sub_queries."""
+    iteration = int(state.get("iteration") or 0) + 1
+    max_iterations = int(state.get("max_iterations") or 10)
     objective = state.get("current_task_objective") or "No objective provided"
+
+    if iteration > max_iterations:
+        return {
+            "iteration": iteration,
+            "max_iterations": max_iterations,
+            "status": "max_iterations_exceeded",
+            "next_agent": "primary_synthesize",
+            "final_output": (
+                f"Stopped after max_iterations={max_iterations} "
+                f"(objective: {objective})"
+            ),
+        }
+
     decision = route_objective(objective)
 
     route = decision["route"]
@@ -54,15 +69,21 @@ def primary_plan(state: GraphState, vault: VaultAdapter) -> dict:
         to_agent=to_agent,
         performative=Performative.REQUEST,
         task=task,
-        payload={"sub_queries": sub_queries} if sub_queries else {},
+        payload={
+            **({"sub_queries": sub_queries} if sub_queries else {}),
+            "iteration": iteration,
+            "max_iterations": max_iterations,
+        },
         confidence=confidence,
-        rationale=rationale,
+        rationale=f"{rationale} (iteration {iteration}/{max_iterations})",
         expected_output="Structured specialist result",
     )
     out = append_message(state, req)
     out["next_agent"] = next_agent
     out["sub_queries"] = sub_queries
     out["status"] = "running"
+    out["iteration"] = iteration
+    out["max_iterations"] = max_iterations
     return out
 
 

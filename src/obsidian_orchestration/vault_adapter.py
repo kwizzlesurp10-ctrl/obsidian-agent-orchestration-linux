@@ -140,15 +140,30 @@ class ObsidianTunnelVault(VaultAdapter):
             r.raise_for_status()
 
     def search(self, query: str) -> list[dict[str, Any]]:
+        """Search vault notes. Returns [] if the endpoint is unavailable.
+
+        Local REST API variants differ by version; try simple GET first, then
+        JSON POST forms. Failures are soft so agents can continue offline.
+        """
+        data: Any = None
         with self._client() as c:
-            try:
-                r = c.post("/search/simple/", json={"query": query})
-                r.raise_for_status()
-                data = r.json()
-            except Exception:
-                r = c.get("/search/simple/", params={"query": query})
-                r.raise_for_status()
-                data = r.json()
+            attempts = [
+                ("GET", "/search/simple/", {"params": {"query": query}}),
+                ("POST", "/search/simple/", {"json": {"query": query}}),
+                ("POST", "/search/", {"json": {"query": query}}),
+            ]
+            for method, path, kwargs in attempts:
+                try:
+                    r = c.request(method, path, **kwargs)
+                    if r.status_code >= 400:
+                        continue
+                    data = r.json()
+                    break
+                except Exception:
+                    continue
+
+        if data is None:
+            return []
 
         hits: list[dict[str, Any]] = []
         if isinstance(data, list):
