@@ -28,6 +28,24 @@ export OBSIDIAN_API_KEY=your-local-rest-api-bearer-token
 python -m examples.delegation_demos
 ```
 
+### Layered Research Agent (Obsidian)
+
+System prompt lives in the vault at `Agents/Research Agent System Prompt.md`.
+
+Allowed tools: `web_search` · `fetch_url` · `save_note` (vault).  
+Phases: PLAN → EXECUTE (OODA) → REFLECT → VALIDATION → `FINAL`/`PARTIAL` JSON.
+
+```bash
+export OBSIDIAN_API_URL=https://127.0.0.1:27124
+export OBSIDIAN_API_KEY=your-local-rest-api-bearer-token
+export RESEARCH_AGENT=1                 # default on for Scout sequential path
+export RESEARCH_SEARCH_BUDGET=8
+export RESEARCH_FETCH_BUDGET=6
+python -m examples.research_agent_demo "Compare MCP and A2A for multi-agent systems"
+```
+
+Artifacts written under `Research/Sessions/<id>/` (`PLAN.md`, `NOTES.md`, `brief.md`).
+
 ### LLM routing (optional)
 
 ```bash
